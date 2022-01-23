@@ -1,0 +1,779 @@
+DROP DATABASE IF EXISTS BDPROYECTO;
+CREATE DATABASE BDPROYECTO;
+USE BDPROYECTO;
+
+-- ****************************************************************************************************************************
+CREATE TABLE APODERADO (
+  DNI CHAR(8) NOT NULL,
+  NOMBRE VARCHAR(40) NOT NULL,
+  AP_P VARCHAR(30) NOT NULL,
+  TELEFONO VARCHAR(12) NOT NULL,
+  PARENTESCO VARCHAR(30) NOT NULL,
+  PRIMARY KEY (DNI)
+);
+
+CREATE TABLE ALUMNO (
+	DNI CHAR(8) NOT NULL,
+	NOMBRE VARCHAR(40) NOT NULL,
+	AP_P VARCHAR(30) NOT NULL,
+	AP_M VARCHAR(30) NOT NULL,
+	SEXO VARCHAR(10) NOT NULL,
+	EDAD INT NOT NULL,
+	P_WORD CHAR(64) NOT NULL,
+	TELEFONO VARCHAR(12) NOT NULL,
+	F_NACIMIENTO DATE NOT NULL,
+	OBSERVACION VARCHAR(100) NOT NULL,
+	APODERADO_DNI CHAR(8) NOT NULL,
+	PRIMARY KEY (DNI),
+    FOREIGN KEY (APODERADO_DNI) REFERENCES APODERADO(DNI)
+);
+
+CREATE TABLE SECRETARIA (
+   DNI CHAR(8) NOT NULL,
+   NOMBRE VARCHAR(40) NOT NULL,
+   AP_P VARCHAR(30) NOT NULL,
+   AP_M VARCHAR(30) NOT NULL,
+   SEXO VARCHAR(10) NOT NULL,
+   EDAD INT NOT NULL,
+   P_WORD CHAR(64) NOT NULL,
+   TELEFONO VARCHAR(12) NOT NULL,
+   F_NACIMIENTO DATE NOT NULL,
+   OFICIO VARCHAR(45) NOT NULL,
+   PRIMARY KEY (DNI)
+);
+
+CREATE TABLE DOCENTE (
+   DNI CHAR(8) NOT NULL,
+   NOMBRE VARCHAR(40) NOT NULL,
+  AP_P VARCHAR(30) NOT NULL,
+  AP_M VARCHAR(30) NOT NULL,
+  SEXO VARCHAR(10) NOT NULL,
+  EDAD INT NOT NULL,
+  P_WORD CHAR(64) NOT NULL,
+  TELEFONO VARCHAR(12) NOT NULL,
+  F_NACIMIENTO DATE NOT NULL,
+  SUELDO DOUBLE NOT NULL,
+  PRIMARY KEY (DNI)
+);
+
+CREATE TABLE GRADO (
+  ID CHAR(10) NOT NULL,
+  NUMGRADO INT NOT NULL,
+  VACANTES INT NOT NULL,
+  SECCION CHAR(1) NOT NULL,
+  PRIMARY KEY (ID)
+);
+
+CREATE TABLE CURSO (
+	ID CHAR(10) NOT NULL,
+	NOMBRE VARCHAR(45) NOT NULL,
+	TIPO VARCHAR(45) NOT NULL,
+	DIASEMANA VARCHAR(9) NOT NULL,
+	NHORAS INT NOT NULL,
+	GRADO_ID CHAR(10) NOT NULL,
+	DOCENTE_DNI CHAR(8) NOT NULL,
+	PRIMARY KEY (ID),
+	FOREIGN KEY (GRADO_ID)REFERENCES GRADO (ID),
+    FOREIGN KEY (DOCENTE_DNI)REFERENCES DOCENTE (DNI)
+);
+
+CREATE TABLE BIMESTRE (
+	ALUMNO_DNI CHAR(8) NOT NULL,
+	CURSO_ID CHAR(10) NOT NULL,
+	NUMERO INT NOT NULL,
+	N1 DOUBLE UNSIGNED DEFAULT 0.00,
+	N2 DOUBLE UNSIGNED DEFAULT 0.00,
+	N3 DOUBLE UNSIGNED DEFAULT 0.00,
+	N4 DOUBLE UNSIGNED DEFAULT 0.00,
+	N5 DOUBLE UNSIGNED DEFAULT 0.00,
+	N6 DOUBLE UNSIGNED DEFAULT 0.00,
+	N7 DOUBLE UNSIGNED DEFAULT 0.00,
+	N8 DOUBLE UNSIGNED DEFAULT 0.00,
+	ASISTENCIA_BINARIA CHAR(8) DEFAULT "00000000",
+	PRIMARY KEY (ALUMNO_DNI, CURSO_ID, NUMERO),
+    FOREIGN KEY (ALUMNO_DNI) REFERENCES ALUMNO(DNI),
+    FOREIGN KEY (CURSO_ID)REFERENCES CURSO (ID)
+);
+
+
+
+CREATE TABLE USUARIO (
+	DNI CHAR(8) NOT NULL,
+	NOMBRE VARCHAR(40) NOT NULL,
+	AP_P VARCHAR(30) NOT NULL,
+	AP_M VARCHAR(30) NOT NULL,
+	SEXO VARCHAR(10) NOT NULL,
+	EDAD INT NOT NULL,
+	P_WORD CHAR(64) NOT NULL,
+	TELEFONO VARCHAR(12) NOT NULL,
+	F_NACIMIENTO DATE NOT NULL,
+	PRIMARY KEY (DNI)
+);
+
+CREATE TABLE MATRICULA (
+	ID CHAR(10) NOT NULL,
+	FECHA DATE NOT NULL,
+	ALUMNO_DNI CHAR(8) NOT NULL,
+	GRADO_ID CHAR(10) NOT NULL,
+	SECRETARIA_DNI CHAR(8) NOT NULL,
+	PRIMARY KEY (ID),
+    FOREIGN KEY (ALUMNO_DNI) REFERENCES ALUMNO(DNI),
+    FOREIGN KEY (GRADO_ID) REFERENCES GRADO(ID),
+    FOREIGN KEY (SECRETARIA_DNI) REFERENCES SECRETARIA(DNI)
+);
+
+-- VISTAS
+CREATE VIEW vistaMatriculas as 
+select * from MATRICULA;
+
+CREATE VIEW vistaAlumnos as 
+select * from ALUMNO;
+
+CREATE VIEW vistaDocentes as 
+select * from DOCENTE;
+
+CREATE VIEW vistaGrados as 
+select * from GRADO;
+
+CREATE VIEW vistaCursos as 
+select * from CURSO;
+
+CREATE VIEW vistaAlumnosFromDocente as
+  select m.id,a.dni,a.sexo, a.nombre,a.ap_p,a.ap_m,m.grado_id
+  from Alumno as a
+  inner join Matricula as m
+  on a.dni = m.alumno_dni
+  inner join Grado as g
+  on m.grado_id = g.id;
+
+
+
+CREATE VIEW vistaCursosPorGradoNum as
+  select c.id,c.nombre,c.tipo, c.diasemana, c.nhoras, c.grado_id,c.docente_dni,g.numgrado
+  from Curso as c
+  inner join Grado as g
+  on c.grado_Id = g.id;
+
+
+/*
+
+	Colocar aqui datos si no funciona el otro script
+
+*/
+
+-- Procedimientos Apoderado
+delimiter $$
+CREATE PROCEDURE ACTUALIZAR_APODERADO (
+	IN D CHAR(8),IN N VARCHAR(40),IN AP VARCHAR(30),IN T char(12), IN P VARCHAR(30))
+begin 
+	UPDATE APODERADO SET NOMBRE=N, AP_P=AP, TELEFONO=T, PARENTESCO=P WHERE DNI=D;
+end$$
+
+delimiter $$
+CREATE PROCEDURE CONSULTAR_APODERADO(in D CHAR(8))
+begin 
+	select * from APODERADO where DNI=D;
+end$$
+
+delimiter $$
+CREATE PROCEDURE ELIMINAR_APODERADO (in D char(8))
+begin 
+	DELETE FROM ALUMNO WHERE APODERADO_DNI=D;
+	DELETE FROM APODERADO WHERE DNI=D;
+end$$
+
+delimiter $$
+CREATE PROCEDURE INSERTAR_APODERADO (
+	IN D CHAR(8),IN N VARCHAR(40),IN AP VARCHAR(30),IN T char(12), IN P VARCHAR(30))
+begin 
+	INSERT INTO APODERADO  (DNI,NOMBRE,AP_P,TELEFONO,PARENTESCO) VALUES (D,N,AP,T,P);
+end$$
+
+delimiter $$
+create procedure MOSTRAR_APODERADO()
+begin 
+	select * from APODERADO;
+end$$
+
+
+-- ****************************************************************************************************************************
+
+
+-- VISTAS
+
+
+-- PROCEDIMIENTOS ALMACENADOS
+-- Registrar Alumno
+DELIMITER $$
+CREATE PROCEDURE registrar_Alumno(
+    DNI CHAR(8), 
+    NOMBRE VARCHAR(40),
+    AP_P VARCHAR(30),
+    AP_M VARCHAR(30),
+    SEXO VARCHAR(10),
+    EDAD INT,
+    P_WORD CHAR(64),
+    TELEFONO VARCHAR(12),
+    F_NACIMIENTO DATE,
+    OBSERVACION VARCHAR(100),
+    APODERADO_DNI CHAR(8))
+BEGIN
+    INSERT INTO ALUMNO VALUES (DNI,NOMBRE, AP_P, AP_M, SEXO, EDAD, P_WORD, TELEFONO, F_NACIMIENTO, OBSERVACION, APODERADO_DNI);
+END$$
+
+-- Mostrar Alumnos
+DELIMITER $$
+CREATE PROCEDURE mostrar_Alumnos()
+BEGIN
+	select * from vistaAlumnos;
+END$$
+
+
+-- Buscar Alumno 
+DELIMITER $$
+CREATE PROCEDURE buscar_Alumno(DNI2 char (8))
+BEGIN
+	select * from vistaAlumnos where DNI = DNI2;
+END$$
+
+-- Buscar Alumno por Dni
+DELIMITER $$
+CREATE PROCEDURE buscarAlumnoPorDNI(DNI2 char (10))
+BEGIN
+	select * from vistaAlumnos where DNI like DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE buscarAlumnoPorApellido(apel VARCHAR(32))
+BEGIN
+	select * from vistaAlumnos where AP_P like apel;
+END$$
+
+-- Actualizar Alumno
+DELIMITER $$
+CREATE PROCEDURE actualizar_Alumno(
+    NOMBRE2 VARCHAR(40),
+    AP_P2 VARCHAR(30),
+    AP_M2 VARCHAR(30),
+    SEXO2 VARCHAR(10),
+    EDAD2 INT,
+    TELEFONO2 VARCHAR(12),
+    F_NACIMIENTO2 DATE,
+    OBSERVACION2 VARCHAR(100),
+    APODERADO_DNI2 CHAR(8),
+    DNI2 CHAR(8))
+BEGIN
+    UPDATE ALUMNO SET NOMBRE=NOMBRE2, AP_P=AP_P2, AP_M=AP_M2, SEXO=SEXO2, EDAD=EDAD2, TELEFONO=TELEFONO2, F_NACIMIENTO=F_NACIMIENTO2, OBSERVACION=OBSERVACION2, APODERADO_DNI=APODERADO_DNI2 WHERE DNI=DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE actualizar_passw_Alumno(PASSW CHAR(64), DNI2 CHAR(8))
+BEGIN
+	UPDATE ALUMNO SET P_WORD = PASSW WHERE DNI=DNI2;
+END$$
+
+-- Eliminar Alumno
+DELIMITER $$
+CREATE PROCEDURE eliminar_Alumno(DNI2 CHAR(8))
+BEGIN
+    DELETE FROM ALUMNO WHERE DNI=DNI2;
+END$$
+
+-- ****************************************************************************************************************************
+-- Insertar
+DELIMITER $$
+CREATE PROCEDURE insertar_Secretaria(
+    DNI CHAR(8),
+   NOMBRE VARCHAR(40),
+   AP_P VARCHAR(30),
+   AP_M VARCHAR(30),
+   SEXO VARCHAR(10),
+   EDAD INT,
+   P_WORD CHAR(64),
+   TELEFONO VARCHAR(12),
+   F_NACIMIENTO DATE,
+   OFICIO VARCHAR(45))
+BEGIN
+    INSERT INTO SECRETARIA VALUES (DNI, NOMBRE, AP_P, AP_M, SEXO, EDAD, P_WORD,TELEFONO, F_NACIMIENTO, OFICIO);
+END$$
+
+-- Consultar
+DELIMITER $$
+CREATE PROCEDURE consultar_Secretaria(dni2 char(8))
+BEGIN
+    SELECT * 
+    FROM SECRETARIA
+    WHERE dni = dni2;
+END$$
+
+-- Actualizar
+DELIMITER $$
+CREATE PROCEDURE actualizar_Secretaria(
+   DNI2 CHAR(8),
+   NOMBRE2 VARCHAR(40),
+   AP_P2 VARCHAR(30),
+   AP_M2 VARCHAR(30),
+   SEXO2 VARCHAR(10),
+   EDAD2 INT,
+   TELEFONO2 VARCHAR(12),
+   F_NACIMIENTO2 DATE,
+   OFICIO2 VARCHAR(45))
+BEGIN
+    UPDATE SECRETARIA SET DNI = DNI2, NOMBRE = NOMBRE2, AP_P = AP_P2, AP_M=AP_M2, SEXO = SEXO2, EDAD = EDAD2, TELEFONO = TELEFONO2, F_NACIMIENTO = F_NACIMIENTO2, OFICIO = OFICIO2
+    WHERE DNI = DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE actualizar_passw_Secretaria(PASSW CHAR(64), DNI2 CHAR(8))
+BEGIN
+	UPDATE SECRETARIA SET P_WORD = PASSW WHERE DNI=DNI2;
+END$$
+
+-- Eliminar
+DELIMITER $$
+CREATE PROCEDURE eliminar_Secretaria(dni2 char(8))
+BEGIN
+    DELETE FROM SECRETARIA WHERE dni = dni2;
+END$$
+
+-- Mostrar Todos
+DELIMITER $$
+CREATE PROCEDURE mostrar_Secretarias()
+BEGIN
+    SELECT * 
+    FROM SECRETARIA;
+END$$
+
+-- ****************************************************************************************************************************
+
+
+-- VISTAS
+
+
+-- PROCEDIMIENTOS ALMACENADOS
+DELIMITER $$
+CREATE PROCEDURE registrarDocente(
+	DNI CHAR(8),
+	NOMBRE VARCHAR(40),
+	AP_P VARCHAR(30),
+	AP_M VARCHAR(30),
+	SEXO VARCHAR(10),
+	EDAD INT,
+	P_WORD CHAR(64),
+	TELEFONO VARCHAR(12),
+	F_NACIMIENTO DATE,
+	SUELDO DOUBLE)
+BEGIN
+    INSERT INTO DOCENTE VALUES (DNI, NOMBRE, AP_P, AP_M, SEXO, EDAD, P_WORD, TELEFONO, F_NACIMIENTO, SUELDO);
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE mostrarDocentes()
+BEGIN
+	select * from vistaDocentes;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE buscarDocente(DNI2 char (8))
+BEGIN
+	select * from vistaDocentes where DNI = DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE buscarDocentePorDNI(DNI2 char (10))
+BEGIN
+	select * from vistaDocentes where DNI like DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE actualizarDocente(
+	DNI2 CHAR(8),
+	NOMBRE2 VARCHAR(40),
+	AP_P2 VARCHAR(30),
+	AP_M2 VARCHAR(30),
+	SEXO2 VARCHAR(10),
+	EDAD2 INT,
+	TELEFONO2 VARCHAR(12),
+	F_NACIMIENTO2 DATE,
+	SUELDO2 DOUBLE)
+BEGIN
+	UPDATE DOCENTE SET NOMBRE=NOMBRE2, AP_P=AP_P2, AP_M=AP_M2, SEXO=SEXO2, EDAD=EDAD2, TELEFONO=TELEFONO2, F_NACIMIENTO = F_NACIMIENTO2, SUELDO=SUELDO2 where DNI = DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE actualizar_passw_Docente(PASSW CHAR(64), DNI2 CHAR(8))
+BEGIN
+	UPDATE DOCENTE SET P_WORD = PASSW WHERE DNI=DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE eliminarDocente(DNI2 CHAR(8))
+BEGIN
+	delete from DOCENTE where DNI = DNI2;
+END$$
+
+
+
+-- ****************************************************************************************************************************
+
+
+-- VISTAS
+
+
+-- PROCEDIMIENTOS ALMACENADOS
+DELIMITER $$
+CREATE PROCEDURE registrarGrado(id char(10), numGrado int, vacantes int, seccion char (1))
+BEGIN
+	INSERT INTO GRADO VALUES (id,numGrado,vacantes,seccion);
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE mostrarGrados()
+BEGIN
+	select * from vistaGrados;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE buscarGrado(idG char(10))
+BEGIN
+	select * from vistaGrados where id= idG;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE actualizarGrado(id2 char(10), numGrado2 int, vacantes2 int, seccion2 char (1), id1 char (10))
+BEGIN
+	UPDATE GRADO SET id=id2,numGrado=numGrado2, vacantes = vacantes2, seccion =seccion2 where id = id1;
+END$$
+
+-- Buscar Alumno por Dni
+DELIMITER $$
+CREATE PROCEDURE buscarGradoPorID(ID2 char (12))
+BEGIN
+	select * from vistaGrados where ID like ID2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE eliminarGrado(in id2 char(10))
+BEGIN
+	delete from GRADO where id = id2;
+END$$
+
+
+-- ****************************************************************************************************************************
+
+
+-- VISTAS
+
+
+
+-- PROCEDIMIENTOS ALMACENADOS
+-- Insertar Curso
+DELIMITER $$
+CREATE PROCEDURE insertar_Curso(
+    ID CHAR(10), 
+    NOMBRE VARCHAR(45), 
+    TIPO VARCHAR(45), 
+    DIASEMANA INT, 
+    NHORAS INT,  
+    GRADO_ID CHAR(10), 
+    DOCENTE_DNI CHAR(8))
+BEGIN
+    INSERT INTO CURSO VALUES (ID, NOMBRE, TIPO, DIASEMANA, NHORAS, GRADO_ID, DOCENTE_DNI);
+END$$
+
+-- Buscar Curso
+DELIMITER $$
+CREATE PROCEDURE buscar_Curso(ID2 CHAR(10))
+BEGIN 
+	SELECT * FROM vistaCursos WHERE ID=ID2;
+END
+$$
+
+-- Mostrar Cursos
+DELIMITER $$
+CREATE PROCEDURE mostrar_Cursos()
+BEGIN
+	SELECT * FROM vistaCursos;
+END$$
+
+-- Buscar Cursos por Grado
+DELIMITER $$
+CREATE PROCEDURE buscar_Curso_por_Id_Grado(G_ID CHAR(10))
+BEGIN 
+	SELECT * FROM vistaCursos WHERE GRADO_ID=G_ID GROUP BY NOMBRE;
+END
+$$
+
+-- Buscar Cursos por Grado Numero
+DELIMITER $$
+CREATE PROCEDURE buscar_Curso_por_Num_Grado(NUM INT)
+BEGIN 
+	SELECT * FROM vistaCursosPorGradoNum WHERE numgrado=NUM;
+END
+$$
+
+-- Buscar Cursos por Docente
+DELIMITER $$
+CREATE PROCEDURE buscar_Curso_por_Docente(D_DNI CHAR(8))
+BEGIN 
+	SELECT * FROM vistaCursos WHERE DOCENTE_DNI=D_DNI GROUP BY NOMBRE;
+END
+$$
+
+-- Actualizar Curso
+DELIMITER $$
+CREATE PROCEDURE actualizar_Curso(
+    NOMBRE2 VARCHAR(45), 
+    TIPO2 VARCHAR(45), 
+    DIASEMANA2 INT, 
+    NHORAS2 INT,  
+    GRADO_ID2 CHAR(10), 
+    DOCENTE_DNI2 CHAR(8),
+    ID2 CHAR(10))
+BEGIN
+    UPDATE CURSO SET NOMBRE=NOMBRE2, TIPO=TIPO2, DIASEMANA=DIASEMANA2, NHORAS=NHORAS2, GRADO_ID=GRADO_ID2, DOCENTE_DNI=DOCENTE_DNI2 WHERE ID=ID2;
+END$$
+
+-- Eliminar Curso
+DELIMITER $$
+CREATE PROCEDURE eliminar_Curso(ID2 CHAR(10))
+BEGIN 
+	DELETE FROM CURSO WHERE ID=ID2;
+END
+$$
+-- ****************************************************************************************************************************
+
+-- Procedimientos Bimestre
+delimiter $$
+CREATE PROCEDURE ACTUALIZAR_BIMESTRE (
+	IN D CHAR(8),IN ID CHAR(10),IN N INT,
+    IN N_1 DOUBLE,IN N_2 DOUBLE,IN N_3 DOUBLE,IN N_4 DOUBLE,IN N_5 DOUBLE,IN N_6 DOUBLE,
+    IN N_7 DOUBLE,IN N_8 DOUBLE,IN A_B CHAR(8))
+begin 
+	UPDATE BIMESTRE SET N1=N_1, N2=N_2, N3=N_3, N4=N_4, N5=N_5, N6=N_6, N7=N_7, N8=N_8,ASISTENCIA_BINARIA=A_B
+    WHERE ALUMNO_DNI=D AND CURSO_ID=ID AND NUMERO=N;
+end$$
+
+delimiter $$
+CREATE PROCEDURE CONSULTAR_BIMESTRE(IN D CHAR(8),IN ID CHAR(10),IN N INT)
+begin 
+	select * from BIMESTRE where ALUMNO_DNI=D AND CURSO_ID=ID AND NUMERO=N;
+end$$
+
+delimiter $$
+CREATE PROCEDURE ELIMINAR_BIMESTRE (IN D CHAR(8),IN ID CHAR(10),IN N INT)
+begin 
+	DELETE FROM BIMESTRE WHERE ALUMNO_DNI=D AND CURSO_ID=ID AND NUMERO=N;
+end$$
+
+delimiter $$
+CREATE PROCEDURE INSERTAR_BIMESTRE (
+	IN D CHAR(8),IN ID CHAR(10),IN N INT,
+    IN N_1 DOUBLE,IN N_2 DOUBLE,IN N_3 DOUBLE,IN N_4 DOUBLE,IN N_5 DOUBLE,IN N_6 DOUBLE,
+    IN N_7 DOUBLE,IN N_8 DOUBLE,IN A_B CHAR(8))
+begin 
+	INSERT INTO BIMESTRE  (ALUMNO_DNI,CURSO_ID,NUMERO,N1,N2,N3,N4,N5,N6,N7,N8,ASISTENCIA_BINARIA) VALUES (D,ID,N,N_1,N_2,N_3,N_4,N_5,N_6,N_7,N_8,A_B);
+end$$
+
+delimiter $$
+CREATE PROCEDURE CREAR_BIMESTRE (IN D CHAR(8),IN ID CHAR(10),IN N INT)
+begin 
+	INSERT INTO BIMESTRE (ALUMNO_DNI,CURSO_ID_NUMERO) VALUES (D,ID,N);
+end$$
+
+
+delimiter $$
+create procedure MOSTRAR_BIMESTRE()
+begin 
+	select * from BIMESTRE;
+end$$
+delimiter $$
+create procedure MOSTRAR_BIMESTRE_ALUMNO(IN D CHAR(8))
+begin 
+	select * from BIMESTRE WHERE ALUMNO_DNI=D;
+end$$
+
+-- ELIMINAR MATRICULA
+delimiter $$
+CREATE PROCEDURE ELIMINAR_BIMESTRE_MATRICULA (D CHAR(8))
+begin 
+	DELETE FROM BIMESTRE WHERE ALUMNO_DNI=D;
+end$$
+
+-- ***********************************************************************************************************************************
+
+
+DELIMITER $$
+CREATE PROCEDURE insertar_Usuario(
+    DNI CHAR(8),
+	NOMBRE VARCHAR(40),
+	AP_P VARCHAR(30),
+	AP_M VARCHAR(30),
+	SEXO VARCHAR(10),
+	EDAD INT,
+	P_WORD CHAR(64),
+	TELEFONO VARCHAR(12),
+	F_NACIMIENTO DATE)
+BEGIN
+    INSERT INTO USUARIO VALUES (DNI, NOMBRE, AP_P,AP_M,SEXO,EDAD,P_WORD,TELEFONO,F_NACIMIENTO);
+END$$
+select * from usuario;
+-- Consultar
+DELIMITER $$
+CREATE PROCEDURE consultar_Usuario(dni2 char(8))
+BEGIN
+    SELECT * 
+    FROM USUARIO
+    WHERE dni = dni2;
+END$$
+
+-- Actualizar
+DELIMITER $$
+CREATE PROCEDURE actualizar_Usuario(
+	DNI2 CHAR(8),
+	NOMBRE2 VARCHAR(40),
+	AP_P2 VARCHAR(30),
+	AP_M2 VARCHAR(30),
+	SEXO2 VARCHAR(10),
+	EDAD2 INT,
+	TELEFONO2 VARCHAR(12),
+	F_NACIMIENTO2 DATE)
+BEGIN
+    UPDATE Usuario SET DNI = DNI2, NOMBRE = NOMBRE2, AP_P = AP_P2, AP_M=AP_M2, SEXO = SEXO2, EDAD = EDAD2, TELEFONO = TELEFONO2, F_NACIMIENTO = F_NACIMIENTO2
+    WHERE DNI = DNI2;
+END$$
+
+DELIMITER $$
+CREATE PROCEDURE actualizar_passw_Usuario(PASSW CHAR(64), DNI2 CHAR(8))
+BEGIN
+	UPDATE Usuario SET P_WORD = PASSW WHERE DNI=DNI2;
+END$$
+
+-- Eliminar
+DELIMITER $$
+CREATE PROCEDURE eliminar_Usuario(dni2 char(8))
+BEGIN
+    DELETE FROM USUARIO WHERE dni = dni2;
+END$$
+
+-- Mostrar Todos
+DELIMITER $$
+CREATE PROCEDURE mostrar_Usuarios()
+BEGIN
+    SELECT * 
+    FROM Usuario;
+END$$
+
+-- *************************************************************************************************************************************
+-- Insertar Matricula
+DELIMITER $$
+CREATE PROCEDURE insertar_Matricula(
+    ID CHAR(10), 
+    FECHA DATE, 
+    ALUMNO_DNI CHAR(8), 
+    GRADO_ID CHAR(10),  
+    SECRETARIA_DNI CHAR(8))
+BEGIN
+    INSERT INTO MATRICULA VALUES (ID,FECHA,ALUMNO_DNI,GRADO_ID,SECRETARIA_DNI);
+END$$
+
+-- Buscar Matricula
+DELIMITER $$
+CREATE PROCEDURE buscar_Matricula(ID2 CHAR(10))
+BEGIN 
+	SELECT * FROM vistaMatriculas WHERE ID=ID2;
+END
+$$
+
+-- Para Buscar en txt
+DELIMITER $$
+CREATE PROCEDURE mostrar_Matricula_por_Alumno(DNIA CHAR(10))
+BEGIN 
+	SELECT * FROM vistaMatriculas WHERE ALUMNO_DNI LIKE DNIA;
+END
+$$
+
+-- Buscar Matricula por Dni Alumno
+DELIMITER $$
+CREATE PROCEDURE buscar_Matricula_DNIAlumno(DNIA CHAR(8))
+BEGIN 
+	SELECT * FROM vistaMatriculas WHERE ALUMNO_DNI = DNIA;
+END
+$$
+
+
+-- Mostrar Matriculas
+DELIMITER $$
+CREATE PROCEDURE mostrar_Matriculas()
+BEGIN
+	SELECT * FROM vistaMatriculas;
+END$$
+
+-- Actualizar Matricula
+DELIMITER $$
+CREATE PROCEDURE actualizar_Matricula(
+    FECHA2 DATE, 
+    ALUMNO_DNI2 CHAR(8), 
+    GRADO_ID2 CHAR(10),  
+    SECRETARIA_DNI2 CHAR(8),
+    ID2 CHAR(10))
+BEGIN
+    UPDATE MATRICULA SET FECHA=FECHA2, ALUMNO_DNI=ALUMNO_DNI2,GRADO_ID=GRADO_ID2,SECRETARIA_DNI=SECRETARIA_DNI2 WHERE ID=ID2;
+END$$
+
+-- Eliminar Matricula
+DELIMITER $$
+CREATE PROCEDURE eliminar_Matricula(ID2 CHAR(10))
+BEGIN 
+	DELETE FROM MATRICULA WHERE ID=ID2;
+END
+$$
+
+DELIMITER $$
+CREATE PROCEDURE NumMatriculadosPorIDGrado(G_ID CHAR(10))
+BEGIN 
+	SELECT COUNT(*) FROM MATRICULA WHERE GRADO_ID=G_ID;
+END
+$$
+
+-- ***************************************************************************************************************************
+select * from matricula;
+delete from matricula;
+-- Data maestra
+
+
+
+-- Procedimientos agregados 
+DELIMITER $$
+CREATE PROCEDURE buscarRegistrosPorCursoYNumero(idCurso2 CHAR(10), numero2 int)
+BEGIN 
+	select * from Bimestre where CURSO_ID = idCurso2 and numero = numero2;
+END
+$$
+
+DELIMITER $$
+CREATE PROCEDURE mostrarCursosPorDocente(dniDocente CHAR(8))
+BEGIN 
+	select * from Curso where DOCENTE_DNI = dniDocente;
+END
+$$
+
+DELIMITER $$
+CREATE PROCEDURE mostrarAlumnosDelCurso(G_ID CHAR(10))
+BEGIN 
+	select * from Matricula where GRADO_ID = G_ID;
+END
+$$
+
+
+
+DELIMITER $$
+CREATE PROCEDURE mostrarListasDocente(gid char(10))
+BEGIN 
+	select * from vistaAlumnosFromDocente where grado_id=gid order by ap_p ;
+END
+$$
+
+
+
+
